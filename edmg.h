@@ -1,7 +1,7 @@
-/*Copyright (c) 2011—2017. Xinzhe WU in Maison de la Simulation. All rights reserved */
+/*Copyright (c) 2017. Xinzhe WU in Maison de la Simulation. All rights reserved */
 
-#ifndef _GEN_H
-#define _GEN_H
+#ifndef _EDMG_H
+#define _EDMG_H
 
 #include "petscmat.h"
 #include "mpi.h"

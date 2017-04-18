@@ -1,6 +1,6 @@
-/*Copyright (c) 2011—2017. Xinzhe WU in Maison de la Simulation. All rights reserved */
+/*Copyright (c) 2017. Xinzhe WU in Maison de la Simulation. All rights reserved */
 
-#include "gen.h"
+#include "edmg.h"
 
 #define PI 3.1415926
 #define epsilon 1
@@ -55,10 +55,10 @@ PetscErrorCode readBinaryScalarArray(const char * name, int * nb, PetscScalar * 
 }
 
 
-void random_selection(PetscReal *ret, PetscInt nombre)
+void random_selection(PetscScalar *ret, PetscInt nombre)
 {
 
-  PetscInt		i, indice;
+  PetscInt		i;
   int 			my_seed,my_rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&my_rank);
   my_seed=time(NULL)+my_rank;
@@ -69,30 +69,7 @@ void random_selection(PetscReal *ret, PetscInt nombre)
   }
 }
 
-void selection(PetscScalar *ret, PetscInt nombre, PetscInt min, PetscInt max)
-{
-
-  PetscScalar		*tab;
-  PetscInt		i, indice, maxi = max - min;
- 
-  if(min >= max || nombre > maxi + 1 || nombre < 1)
-    PetscPrintf(PETSC_COMM_WORLD,"Input values of tirage() are wrong.\n");
- 
-  PetscMalloc((maxi + 1)*sizeof(tab[0]),&tab);
-
-  for(i = 0; i < maxi + 1; i++)
-    tab[i] = i + min;
- 
-  for(i = 0; i < nombre; i++){
-    indice = rand() % (maxi + 1);
-    ret[i] = tab[indice];
-    tab[indice] = tab[maxi];
-    maxi--;
-  }
-  PetscFree(tab);
-}
-
-void shuffer(PetscReal *array, PetscInt n)
+void shuffer(PetscScalar *array, PetscInt n)
 {
 	int index, i;
 	PetscScalar tmp;
@@ -125,67 +102,43 @@ int *indexShuffer(PetscInt n)
 	return a;
 }
 
-void printarray(PetscInt n, PetscReal *a) {
-    int k = 0;
+void printarray(PetscInt n, PetscScalar *a) {
+
+	PetscScalarView(n, a, PETSC_VIEWER_STDOUT_WORLD);
+
+/*    int k = 0;
 
     for (k = 0; k < n; k++) {
 		printf("%e   ", a[k]);
 		if (k % 8 == 7)
 	    	printf("\n");
-    }
+    }*/
 }
-
-
-PetscScalar Random (PetscInt _iMin, PetscInt _iMax) 
-{ 
-	return (_iMin + (rand () % (_iMax-_iMin+1))); 
-} 
-
-PetscInt IRandom (PetscInt _iMin, PetscInt _iMax) 
-{ 
-	return (_iMin + (rand () % (_iMax-_iMin+1))); 
-} 
 
 int main(int argc, char ** argv){
 
-  	PetscInt sizen;
-
 	PetscInitialize(&argc,&argv,(char *)0,help);
 
-
-	char buf[PETSC_MAX_PATH_LEN];
 	char fileb[PETSC_MAX_PATH_LEN];
-
-	Vec            eigenvalues, v;
-  	PetscInt       vl_start,vl_end;
-
-  	Mat            Mt, AM, MA, matAop;
   
   	Mat            A;
 
   	PetscErrorCode ierr;
 
-  	PetscInt       n,i,j,k,degree, nzeros;
-  	PetscScalar    rRandom1, rRandom2;
-  	PetscInt       iRandom, d1, d2;
+  	PetscInt       n, k, nzeros;
 
   	PetscInt    	size;
 
-
-  	PetscScalar    *array, *tmp_array, *read_array;
   	PetscBool      flagb;
-
-  	PetscMPIInt    my_rank;
-  	PetscViewer fd;
 
 	MatInfo     	Ainfo;
 	double        	gnnz;
 	char           	matrixOutputFile[PETSC_MAX_PATH_LEN];
-	PetscViewer    	output_viewer, viewer;
+	PetscViewer    	output_viewer;
 
 
   	n = 274;
-  	nzeros =270; 
+  	nzeros =220; 
   	int *Apermut;
   	Apermut = indexShuffer(n);
 
@@ -294,7 +247,7 @@ int main(int argc, char ** argv){
 			
 	PetscViewerBinaryOpen(PETSC_COMM_WORLD,matrixOutputFile,FILE_MODE_WRITE,&output_viewer);
 	PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
-	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+	//MatView(A,PETSC_VIEWER_STDOUT_WORLD);
 	MatView(A,output_viewer);
 	PetscViewerDestroy(&output_viewer);
 		

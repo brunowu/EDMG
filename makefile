@@ -29,10 +29,10 @@ distclean :
 	-@echo "Finised cleaning application and libraries"
 	-@echo "========================================="	
 
-exec: gen.o
+exec: edmg.o
 	-@echo "BEGINNING TO COMPILE APPLICATION "
 	-@echo "========================================="
-	-@${CLINKER} -o ${EXEC} gen.o ${PETSC_LIB}
+	-@${CLINKER} -o ${EXEC} edmg.o ${PETSC_LIB}
 	-@echo "Completed building application"
 	-@echo "========================================="
 
