@@ -59,13 +59,28 @@ void random_selection(PetscScalar *ret, PetscInt nombre)
 {
 
   PetscInt		i;
+  PetscScalar 	flg;
+
   int 			my_seed,my_rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&my_rank);
   my_seed=time(NULL)+my_rank;
 
   srand(my_seed); 
+
+  if(rand()/(double)RAND_MAX > 0.5){
+  	flg = 1.0;
+  }
+  else{
+  	flg = 0.0;
+  }
+
+
   for(i = 0; i < nombre; i++){
-    ret[i] = rand()/(double)RAND_MAX;
+
+    //ret[i] = -1.0*rand()/(double)RAND_MAX + PETSC_i * rand()/(double)RAND_MAX;
+    if(i < nombre / 2)
+    	ret[i] = (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
+    else ret[i] = 2 * (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
   }
 }
 
@@ -105,14 +120,6 @@ int *indexShuffer(PetscInt n)
 void printarray(PetscInt n, PetscScalar *a) {
 
 	PetscScalarView(n, a, PETSC_VIEWER_STDOUT_WORLD);
-
-/*    int k = 0;
-
-    for (k = 0; k < n; k++) {
-		printf("%e   ", a[k]);
-		if (k % 8 == 7)
-	    	printf("\n");
-    }*/
 }
 
 int main(int argc, char ** argv){
@@ -129,16 +136,24 @@ int main(int argc, char ** argv){
 
   	PetscInt    	size;
 
-  	PetscBool      flagb;
+  	PetscBool      flagb, flagn, flagnzeros;
 
 	MatInfo     	Ainfo;
 	double        	gnnz;
 	char           	matrixOutputFile[PETSC_MAX_PATH_LEN];
 	PetscViewer    	output_viewer;
 
+    ierr=PetscOptionsGetInt(PETSC_NULL,"-n",&n,&flagn);CHKERRQ(ierr);
+    if (!flagn){
+		ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!Please set the dimension of matrix to be generated\n");CHKERRQ(ierr);
+		return 0;
+	}
+    ierr=PetscOptionsGetInt(PETSC_NULL,"-nzeros",&nzeros,&flagnzeros);CHKERRQ(ierr);
+    if (!flagnzeros){
+		ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!Please number of zeros per row of matrix to be generated\n");CHKERRQ(ierr);
+		return 0;
+	}
 
-  	n = 274;
-  	nzeros =220; 
   	int *Apermut;
   	Apermut = indexShuffer(n);
 
@@ -163,13 +178,14 @@ int main(int argc, char ** argv){
 	
 	if (!flagb){
 		random_selection(Deigenvalues,n);
+		shuffer(Deigenvalues,n);
 	}
 	else{
 		readBinaryScalarArray(fileb, &size, Deigenvalues);
 		shuffer(Deigenvalues,size);
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"read file size = %d\n", size);CHKERRQ(ierr);
 		if(size != n){
-			ierr = PetscPrintf(PETSC_COMM_WORLD,"read file size and vec dimemson do not match\n");CHKERRQ(ierr);
+			ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!read file size and vec dimemson do not match and mat dim set to be equal to vec dim\n");CHKERRQ(ierr);
 			return 0;
 		}
 	}
@@ -247,7 +263,7 @@ int main(int argc, char ** argv){
 			
 	PetscViewerBinaryOpen(PETSC_COMM_WORLD,matrixOutputFile,FILE_MODE_WRITE,&output_viewer);
 	PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
-	//MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
 	MatView(A,output_viewer);
 	PetscViewerDestroy(&output_viewer);
 		

@@ -38,6 +38,8 @@ exec: edmg.o
 
 #-ksp_monitor_true_residual -eps_monitor
 
-run:
-	-@${MPIEXEC} -np 1 ./generateur -nblock ${NBLOCK}
+run1:
+	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200
+run2:
+	-@${MPIEXEC} -np 1 ./generateur -n 300 -nzeros 280
 
