@@ -2,6 +2,7 @@
 
 #include "edmg.h"
 
+//#define CLOCKS_PER_SEC ((clock_t)1000) 
 #define PI 3.1415926
 #define epsilon 1
 
@@ -143,6 +144,12 @@ int main(int argc, char ** argv){
 	char           	matrixOutputFile[PETSC_MAX_PATH_LEN];
 	PetscViewer    	output_viewer;
 
+	int             world_size;
+
+	MPI_Comm_size(PETSC_COMM_WORLD, &world_size);
+        PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
+	PetscPrintf(PETSC_COMM_WORLD, "Using number of %d precessors for the generation...\n", world_size);
+
     ierr=PetscOptionsGetInt(PETSC_NULL,"-n",&n,&flagn);CHKERRQ(ierr);
     if (!flagn){
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!Please set the dimension of matrix to be generated\n");CHKERRQ(ierr);
@@ -153,6 +160,7 @@ int main(int argc, char ** argv){
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!Please number of zeros per row of matrix to be generated\n");CHKERRQ(ierr);
 		return 0;
 	}
+        PetscPrintf(PETSC_COMM_WORLD, "To generate matrix with dim = %d, number zeros = %d ... \n", n, nzeros);
 
   	int *Apermut;
   	Apermut = indexShuffer(n);
@@ -173,14 +181,16 @@ int main(int argc, char ** argv){
 
   	PetscScalar *Deigenvalues;
   	PetscMalloc1(n,&Deigenvalues);
-
+        PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
     ierr=PetscOptionsGetString(PETSC_NULL,"-vfile",fileb,PETSC_MAX_PATH_LEN-1,&flagb);CHKERRQ(ierr);
 	
 	if (!flagb){
+		PetscPrintf(PETSC_COMM_WORLD, "Not providing the outside eigenvalues files, using the internal functions to generate them...\n");
 		random_selection(Deigenvalues,n);
 		shuffer(Deigenvalues,n);
 	}
 	else{
+        	PetscPrintf(PETSC_COMM_WORLD, "Using the eigenvalues provides by outside files: %s ...\n", fileb);
 		readBinaryScalarArray(fileb, &size, Deigenvalues);
 		shuffer(Deigenvalues,size);
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"read file size = %d\n", size);CHKERRQ(ierr);
@@ -188,10 +198,12 @@ int main(int argc, char ** argv){
 			ierr = PetscPrintf(PETSC_COMM_WORLD,"!!!read file size and vec dimemson do not match and mat dim set to be equal to vec dim\n");CHKERRQ(ierr);
 			return 0;
 		}
+		n = size;
 	}
 
-	printarray(n,Deigenvalues);
-
+//	printarray(n,Deigenvalues);
+        PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
+        PetscPrintf(PETSC_COMM_WORLD, "@>Generating ...\n");
 	PetscReal RinvAC=0;
 	PetscReal RinvADC=0;
 
@@ -217,30 +229,78 @@ int main(int argc, char ** argv){
 	PetscReal inv_lambda;
 
 	inv_lambda=-RinvAC+epsilon;
-
+	clock_t start, finish;
+	double  duration;	
+	PetscInt Istart, Iend;
+	start = clock();
 	ierr = MatCreate(PETSC_COMM_WORLD,&A);CHKERRQ(ierr);
 	ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n);CHKERRQ(ierr);
 	ierr = MatSetType(A,MATMPIAIJ);CHKERRQ(ierr);
 	ierr = MatSetFromOptions(A);CHKERRQ(ierr); 
 	ierr = MatSetUp(A);CHKERRQ(ierr);
+	MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+	//ierr = MatMPIAIJSetPreallocation(A,n-nzeros,NULL,n-nzeros,NULL);CHKERRQ(ierr);
+	//ierr = MatSeqAIJSetPreallocation(A,n-nzeros,NULL);
+	ierr = MatGetOwnershipRange(A,&Istart,&Iend); CHKERRQ(ierr);
 
-	PetscScalar matrix_element;
+	PetscScalar matrix_element=.0;
 
+//	PetscInt    index[n][n];
+/*	
+	for(k1 = 0; k1 < n; k1++){
+		for(k2 = 0; k2 < n; k2++){
+			if(RCpermut[k2]<(n-nzeros) && RCpermut[Apermut[k1]] < (n-nzeros)){
+				PetscPrintf(PETSC_COMM_WORLD, "k1 = %d ; k2 = %d\n", k1, k2);
+			}
+		}
+	}
+*/
+	int cnt = 0;
+	///     	PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
+	int index[n];
+	PetscScalar val[n];
+  	 for (k1 = Istart; k1 < Iend; k1++) {
+		for(k2=0; k2 < n; k2++){
+			if(k2 == k1){
+				matrix_element = Deigenvalues[Apermut[k1]];
+                                MatSetValues(A,1,&k1,1,&k2,&matrix_element,INSERT_VALUES); 
+			}
+			
+			if(RCpermut[k2]<(n-nzeros) && RCpermut[Apermut[k1]] < (n-nzeros)){
+                                {
+				access_row=row_condensed[RCpermut[k2]];
+				access_column=column_condensed[RCpermut[Apermut[k1]]];
+				index[cnt]=k2;
+				val[cnt] = matrix_element + (1/(inv_lambda))*Deigenvalues[Apermut[k1]]*access_column*access_row 
+					   -(1/epsilon)*Deigenvalues[Apermut[k2]]*access_column*access_row 
+					   -(RinvADC/(inv_lambda*epsilon))*access_column*access_row;
+///			 	printf("k1 = %d ; k2 = %d, cnt = %d, index[%d] = %d \n", k1, k2, cnt, cnt, index[cnt]);		
+				cnt++;
+				}
+		                MatSetValues(A,1,&k1,cnt,index,val,INSERT_VALUES);	
+		} 
+  	}
+	cnt = 0;
+}
+
+/*	
 	for (k1 = 0; k1 < n; k1++) {
 		for (k2 = 0; k2 < n; k2++) {
 			matrix_element=0;
 			if (k1==k2)
 				matrix_element+=Deigenvalues[Apermut[k1]];
+				
 			if (RCpermut[k2]>=(n-nzeros))
-				access_row=0;
+			  access_row=0;
 			else
-				access_row=row_condensed[RCpermut[k2]];
+			  access_row=row_condensed[RCpermut[k2]];
 
 			if (RCpermut[Apermut[k1]]>=(n-nzeros))
-				access_column=0;
+			  access_column=0;
 			else
-				access_column=column_condensed[RCpermut[Apermut[k1]]];
-
+			  access_column=column_condensed[RCpermut[Apermut[k1]]];
+			
+	
 			matrix_element+=(1/(inv_lambda))*Deigenvalues[Apermut[k1]]*access_column*access_row;
 			matrix_element+=-(1/epsilon)*Deigenvalues[Apermut[k2]]*access_column*access_row;
 			matrix_element+=-(RinvADC/(inv_lambda*epsilon))*access_column*access_row;
@@ -250,7 +310,7 @@ int main(int argc, char ** argv){
 			}
 		}
 	}
-
+*/
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
@@ -263,12 +323,18 @@ int main(int argc, char ** argv){
 			
 	PetscViewerBinaryOpen(PETSC_COMM_WORLD,matrixOutputFile,FILE_MODE_WRITE,&output_viewer);
 	PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
-	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+///	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
 	MatView(A,output_viewer);
 	PetscViewerDestroy(&output_viewer);
 		
 	PetscPrintf(PETSC_COMM_WORLD,"\n@>Matrix %s Dumped\n\n",matrixOutputFile);
 	PetscPrintf(PETSC_COMM_WORLD,"\n>>>>>>Please use the command 'gzip -d **' to unzip the file to binary file\n\n");
+
+	finish = clock();
+	duration = (double)(finish - start) / CLOCKS_PER_SEC;
+        PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
+        PetscPrintf(PETSC_COMM_WORLD,"\nElapsed time is %f seconds\n\n", duration);
+        PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
 	PetscFinalize();
 
 	return 0;
