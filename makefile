@@ -36,8 +36,6 @@ exec: edmg.o
 	-@echo "Completed building application"
 	-@echo "========================================="
 
-#-ksp_monitor_true_residual -eps_monitor
-
 run1:
 	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200
 run2:

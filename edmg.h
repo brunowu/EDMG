@@ -20,7 +20,4 @@ typedef struct _MatrixInfo{
 	int nnz;
 } MatrixInfo;
 
-//PetscErrorCode GenMatrixEigen();
-
-
 #endif

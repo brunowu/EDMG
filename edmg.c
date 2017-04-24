@@ -78,7 +78,6 @@ void random_selection(PetscScalar *ret, PetscInt nombre)
 
   for(i = 0; i < nombre; i++){
 
-    //ret[i] = -1.0*rand()/(double)RAND_MAX + PETSC_i * rand()/(double)RAND_MAX;
     if(i < nombre / 2)
     	ret[i] = (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
     else ret[i] = 2 * (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
@@ -245,18 +244,7 @@ int main(int argc, char ** argv){
 
 	PetscScalar matrix_element=.0;
 
-//	PetscInt    index[n][n];
-/*	
-	for(k1 = 0; k1 < n; k1++){
-		for(k2 = 0; k2 < n; k2++){
-			if(RCpermut[k2]<(n-nzeros) && RCpermut[Apermut[k1]] < (n-nzeros)){
-				PetscPrintf(PETSC_COMM_WORLD, "k1 = %d ; k2 = %d\n", k1, k2);
-			}
-		}
-	}
-*/
 	int cnt = 0;
-	///     	PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
 	int index[n];
 	PetscScalar val[n];
   	 for (k1 = Istart; k1 < Iend; k1++) {
@@ -283,34 +271,6 @@ int main(int argc, char ** argv){
 	cnt = 0;
 }
 
-/*	
-	for (k1 = 0; k1 < n; k1++) {
-		for (k2 = 0; k2 < n; k2++) {
-			matrix_element=0;
-			if (k1==k2)
-				matrix_element+=Deigenvalues[Apermut[k1]];
-				
-			if (RCpermut[k2]>=(n-nzeros))
-			  access_row=0;
-			else
-			  access_row=row_condensed[RCpermut[k2]];
-
-			if (RCpermut[Apermut[k1]]>=(n-nzeros))
-			  access_column=0;
-			else
-			  access_column=column_condensed[RCpermut[Apermut[k1]]];
-			
-	
-			matrix_element+=(1/(inv_lambda))*Deigenvalues[Apermut[k1]]*access_column*access_row;
-			matrix_element+=-(1/epsilon)*Deigenvalues[Apermut[k2]]*access_column*access_row;
-			matrix_element+=-(RinvADC/(inv_lambda*epsilon))*access_column*access_row;
-
-			if(matrix_element != 0){
-				ierr = MatSetValues(A,1,&k1,1,&k2,&matrix_element,INSERT_VALUES);CHKERRQ(ierr);
-			}
-		}
-	}
-*/
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
