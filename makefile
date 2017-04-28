@@ -39,5 +39,8 @@ exec: edmg.o
 run1:
 	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200
 run2:
-	-@${MPIEXEC} -np 20 ./generateur -n 200000 -nzeros 199900
-
+	-@${MPIEXEC} -np 2 ./generateur -n 300 -nzeros 200
+run3:
+	-@${MPIEXEC} -np 2 ./generateur -n 300 -nzeros 200 -realMat
+run4:
+	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200 -realMat

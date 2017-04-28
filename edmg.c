@@ -78,10 +78,26 @@ void random_selection(PetscScalar *ret, PetscInt nombre)
 
   for(i = 0; i < nombre; i++){
 
-    if(i < nombre / 2)
-    	ret[i] = (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
-    else ret[i] = 2 * (cos(2*PI*i/nombre)+2) + PETSC_i*sin(2*PI*i/nombre);
-  }
+    if(i < 9*nombre / 10)
+    	ret[i] = 1*(cos(2*PI*i/nombre)+2) + PETSC_i*1*sin(2*PI*i/nombre);
+    else ret[i] = -1*(cos(2*PI*i/nombre)+200) + PETSC_i*1*(sin(2*PI*i/nombre) + 50);
+
+      
+    }
+}
+
+void change(PetscScalar *array, PetscInt n, PetscReal ratio)
+{
+        int i;
+
+        for(i = n-1; i>0;i--){
+                if(i < ratio * n){
+			array[i] = -array[i];
+		}
+                else{
+			array[i] = array[i];
+		}
+        }
 }
 
 void shuffer(PetscScalar *array, PetscInt n)
@@ -136,7 +152,7 @@ int main(int argc, char ** argv){
 
   	PetscInt    	size;
 
-  	PetscBool      flagb, flagn, flagnzeros;
+  	PetscBool      flagb, flagn, flagnzeros, flagisreal;
 
 	MatInfo     	Ainfo;
 	double        	gnnz;
@@ -191,6 +207,7 @@ int main(int argc, char ** argv){
 	else{
         	PetscPrintf(PETSC_COMM_WORLD, "Using the eigenvalues provides by outside files: %s ...\n", fileb);
 		readBinaryScalarArray(fileb, &size, Deigenvalues);
+		change(Deigenvalues, size, 0.5);
 		shuffer(Deigenvalues,size);
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"read file size = %d\n", size);CHKERRQ(ierr);
 		if(size != n){
@@ -200,7 +217,7 @@ int main(int argc, char ** argv){
 		n = size;
 	}
 
-//	printarray(n,Deigenvalues);
+	printarray(n,Deigenvalues);
         PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
         PetscPrintf(PETSC_COMM_WORLD, "@>Generating ...\n");
 	PetscReal RinvAC=0;
@@ -242,13 +259,15 @@ int main(int argc, char ** argv){
 	//ierr = MatSeqAIJSetPreallocation(A,n-nzeros,NULL);
 	ierr = MatGetOwnershipRange(A,&Istart,&Iend); CHKERRQ(ierr);
 
-	PetscScalar matrix_element=.0;
+	PetscScalar matrix_element;
 
 	int cnt = 0;
 	int index[n];
 	PetscScalar val[n];
   	 for (k1 = Istart; k1 < Iend; k1++) {
 		for(k2=0; k2 < n; k2++){
+			matrix_element = 0;
+
 			if(k2 == k1){
 				matrix_element = Deigenvalues[Apermut[k1]];
                                 MatSetValues(A,1,&k1,1,&k2,&matrix_element,INSERT_VALUES); 
@@ -267,6 +286,15 @@ int main(int argc, char ** argv){
 				}
 		                MatSetValues(A,1,&k1,cnt,index,val,INSERT_VALUES);	
 		} 
+
+/*
+			else if(k2 == k1){
+                                matrix_element = Deigenvalues[Apermut[k1]];
+                                MatSetValues(A,1,&k1,1,&k2,&matrix_element,INSERT_VALUES);
+                        }
+
+*/
+
   	}
 	cnt = 0;
 }
@@ -274,6 +302,12 @@ int main(int argc, char ** argv){
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+    	ierr = PetscOptionsHasName(PETSC_NULL,"-realMat",&flagisreal);CHKERRQ(ierr);
+        if(flagisreal){
+
+		ierr = PetscPrintf(PETSC_COMM_WORLD,"\n@>Select the REAL part of generated matrix\n");CHKERRQ(ierr);
+		ierr = MatRealPart(A);CHKERRQ(ierr);
+	}
 	MatGetInfo(A,MAT_GLOBAL_SUM,&Ainfo);
 	gnnz = Ainfo.nz_used;
 
@@ -283,7 +317,7 @@ int main(int argc, char ** argv){
 			
 	PetscViewerBinaryOpen(PETSC_COMM_WORLD,matrixOutputFile,FILE_MODE_WRITE,&output_viewer);
 	PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
-///	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
 	MatView(A,output_viewer);
 	PetscViewerDestroy(&output_viewer);
 		
