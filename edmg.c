@@ -78,6 +78,7 @@ void random_selection(PetscScalar *ret, PetscInt nombre)
 
   for(i = 0; i < nombre; i++){
 
+<<<<<<< HEAD
 /*
     if(i<1*nombre/4) ret = 1*(cos(2*PI*i/nombre)+2) + PETSC_i*1*(sin(2*PI*i/nombre)+2);
     else if(i<2*nombre/4) ret =1* (cos(2*PI*i/nombre)+2) + PETSC_i*1*(sin(2*PI*i/nombre)-2);
@@ -112,11 +113,23 @@ void random_selection(PetscScalar *ret, PetscInt nombre)
 */
     }
 
+=======
+    if(i < 9*nombre / 10)
+    	ret[i] = 1*(cos(2*PI*i/nombre)+2) + PETSC_i*1*sin(2*PI*i/nombre);
+    else ret[i] = -1*(cos(2*PI*i/nombre)+200) + PETSC_i*1*(sin(2*PI*i/nombre) + 50);
+
+      
+    }
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
 }
 
 void change(PetscScalar *array, PetscInt n, PetscReal ratio)
 {
+<<<<<<< HEAD
         PetscInt i;
+=======
+        int i;
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
 
         for(i = n-1; i>0;i--){
                 if(i < ratio * n){
@@ -255,7 +268,11 @@ int main(int argc, char ** argv){
 		n = size;
 	}
 
+<<<<<<< HEAD
 	//printarray(n,Deigenvalues);
+=======
+	printarray(n,Deigenvalues);
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
         PetscPrintf(PETSC_COMM_WORLD, "--------------------------\n");
         PetscPrintf(PETSC_COMM_WORLD, "@>Generating ...\n");
 	PetscReal RinvAC=0;
@@ -298,11 +315,14 @@ int main(int argc, char ** argv){
 	ierr = MatGetOwnershipRange(A,&Istart,&Iend); CHKERRQ(ierr);
 
 	PetscScalar matrix_element;
+<<<<<<< HEAD
 	PetscInt cnt = 0;
 	PetscInt *index;
         PetscMalloc1(n, &index);
 	PetscScalar *val;
 	PetscMalloc1(n, &val);	
+=======
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
 
 
  	 for (k1 = Istart; k1 < Iend; k1++) {
@@ -327,6 +347,15 @@ int main(int argc, char ** argv){
 				}
 		                MatSetValues(A,1,&k1,cnt,index,val,INSERT_VALUES);	
 		} 
+
+/*
+			else if(k2 == k1){
+                                matrix_element = Deigenvalues[Apermut[k1]];
+                                MatSetValues(A,1,&k1,1,&k2,&matrix_element,INSERT_VALUES);
+                        }
+
+*/
+
   	}
 	cnt = 0;
 }
@@ -336,7 +365,11 @@ int main(int argc, char ** argv){
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+<<<<<<< HEAD
     	ierr = PetscOptionsHasName(NULL,PETSC_NULL,"-realMat",&flagisreal);CHKERRQ(ierr);
+=======
+    	ierr = PetscOptionsHasName(PETSC_NULL,"-realMat",&flagisreal);CHKERRQ(ierr);
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
         if(flagisreal){
 
 		ierr = PetscPrintf(PETSC_COMM_WORLD,"\n@>Select the REAL part of generated matrix\n");CHKERRQ(ierr);
@@ -350,9 +383,14 @@ int main(int argc, char ** argv){
 	PetscPrintf(PETSC_COMM_WORLD,"\n@>Dumping matrix to PETSc binary %s\n",matrixOutputFile);
 			
 	PetscViewerBinaryOpen(PETSC_COMM_WORLD,matrixOutputFile,FILE_MODE_WRITE,&output_viewer);
+<<<<<<< HEAD
 //        PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
 	PetscViewerPushFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
 	//MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+=======
+	PetscViewerSetFormat(output_viewer,PETSC_VIEWER_ASCII_INFO_DETAIL);
+	MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
 	MatView(A,output_viewer);
 	PetscViewerDestroy(&output_viewer);
 		

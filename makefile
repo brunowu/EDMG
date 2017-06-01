@@ -40,11 +40,18 @@ exec: edmg.o
 run1:
 	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 100 ${DEBUG_VALGRIND}
 run2:
+<<<<<<< HEAD
 	-@${MPIEXEC} -np 20 ./generateur -n 1000000 -nzeros 999999
+=======
+	-@${MPIEXEC} -np 2 ./generateur -n 300 -nzeros 200
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
 run3:
 	-@${MPIEXEC} -np 2 ./generateur -n 300 -nzeros 200 -realMat
 run4:
 	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200 -realMat
+<<<<<<< HEAD
 
 run5:
 	./generateur -n 330001 -nzeros 330000
+=======
+>>>>>>> 8354f04d89e19bf96d92ea0c1328fb1e3cb3df5c
