@@ -10,6 +10,7 @@ FPPFLAGS	=
 CLEANFILES  = ${EXEC}
 OFILES= ${wildcard ./*.o}
 NBLOCK = 2
+DEBUG_VALGRIND = valgrind
 
 include ${PETSC_DIR}/lib/petsc/conf/variables
 include ${PETSC_DIR}/lib/petsc/conf/rules
@@ -37,7 +38,13 @@ exec: edmg.o
 	-@echo "========================================="
 
 run1:
-	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200
+	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 100 ${DEBUG_VALGRIND}
 run2:
-	-@${MPIEXEC} -np 20 ./generateur -n 200000 -nzeros 199900
+	-@${MPIEXEC} -np 20 ./generateur -n 1000000 -nzeros 999999
+run3:
+	-@${MPIEXEC} -np 2 ./generateur -n 300 -nzeros 200 -realMat
+run4:
+	-@${MPIEXEC} -np 1 ./generateur -vfile lsqr.bin -n 274 -nzeros 200 -realMat
 
+run5:
+	./generateur -n 330001 -nzeros 330000

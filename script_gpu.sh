@@ -7,7 +7,8 @@
 
 #SBATCH --time=02:30:00
 
-#SBATCH -n 20
+#SBATCH -n 1
+#SBATCH --gres=gpu:1
 
 make run2
 
